@@ -49,6 +49,10 @@ const db = mysql.createConnection(
                     value: "addEmployee"
                 },
                 {
+                    name: "Update an employee",
+                    value: "updateEmployee"
+                },
+                {
                     name: "Exit",
                     value: "exit"
                 },
@@ -70,6 +74,8 @@ const db = mysql.createConnection(
                 case "addRole": addRole();
                     break;
                 case "addEmployee": addEmployee();
+                    break;
+                    case "updateEmployee": updateEmployee();
                     break;
                 case "exit":
                     console.log("Thank you very much!");
@@ -217,4 +223,59 @@ const addEmployee = () => {
     })
 }
 
-        
+const updateEmployee = ()=> {
+            // Calling the database to acquire the roles and managers
+            db.query(`SELECT * FROM employees, roles`, (err, result) => {
+                if (err) throw err;
+
+                inquirer.prompt([
+                    {
+                        // Choose an Employee to Update
+                        type: 'list',
+                        name: 'employees',
+                        message: 'Which employees role do you want to update?',
+                        choices: () => {
+                            var array = [];
+                            for (var i = 0; i < result.length; i++) {
+                                array.push(result[i].last_name);
+                            }
+                            var employeeArray = [...new Set(array)];
+                            return employeeArray;
+                        }
+                    },
+                    {
+                        // Updating the New Role
+                        type: 'list',
+                        name: 'roles',
+                        message: 'What is their new role?',
+                        choices: () => {
+                            var array = [];
+                            for (var i = 0; i < result.length; i++) {
+                                array.push(result[i].title);
+                            }
+                            var newArray = [...new Set(array)];
+                            return newArray;
+                        }
+                    }
+                ]).then((answers) => {
+                    // Comparing the result and storing it into the variable
+                    for (var i = 0; i < result.length; i++) {
+                        if (result[i].last_name === answers.employee) {
+                            var name = result[i];
+                        }
+                    }
+
+                    for (var i = 0; i < result.length; i++) {
+                        if (result[i].title === answers.role) {
+                            var role = result[i];
+                        }
+                    }
+
+                    db.query(`UPDATE employees SET ? WHERE ?`, [{role_id: role}, {last_name: name}], (err, result) => {
+                        if (err) throw err;
+                        console.log(`Updated role to the database.`)
+                        init();
+                    });
+                })
+            });
+        }
